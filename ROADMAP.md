@@ -4,7 +4,7 @@ Published previews are design demonstrations. Check a milestone only after its a
 
 - [x] Standalone layout preview and sample feed
 - [ ] Windows display enumeration, profiles and hotplug
-- [ ] Beam and neckband separate/combined presentation feasibility
+- [ ] Android receiving-device separate/combined presentation feasibility
 - [ ] Android and iPadOS companion shells
 - [ ] Dalamud state publisher and HUD-family adapters
 - [ ] Native Moonlight composition and input ownership
