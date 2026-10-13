@@ -5,7 +5,8 @@
   "description": "A companion HUD project for glasses, extra monitors, phones and tablets. A standalone Prism app and combined presentation in native Moonlight share the same layouts.",
   "scripts": {
     "build": "tools/build.sh",
-    "check": "tools/build.sh --check"
+    "check": "tools/build.sh --check",
+    "test": "node --test tests/*.test.js"
   },
   "devDependencies": {
     "imba": "2.0.0-alpha.253",
