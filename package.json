@@ -1,0 +1,20 @@
+{
+  "name": "xivprism-preview",
+  "private": true,
+  "type": "module",
+  "description": "A companion HUD project for glasses, extra monitors, phones and tablets. A standalone Prism app and combined presentation in native Moonlight share the same layouts.",
+  "scripts": {
+    "build": "tools/build.sh",
+    "check": "tools/build.sh --check"
+  },
+  "devDependencies": {
+    "imba": "2.0.0-alpha.253",
+    "esbuild": "0.28.1",
+    "acorn": "8.15.0"
+  },
+  "overrides": {
+    "imba": {
+      "esbuild": "0.28.1"
+    }
+  }
+}

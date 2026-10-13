@@ -1,0 +1,6 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: stylized-concept. Asset type: wide website hero illustration for XivPrism, a companion HUD for FFXIV. Create a polished cinematic editorial illustration, landscape 16:9. A quiet gaming desk seen at three-quarter angle, a handheld PC and a tablet beside a main monitor showing a richly painted fantasy landscape. A pair of slim micro-OLED display glasses connected by a visible USB-C cable rests in the foreground; an imaginative translucent arc of sparse amber and turquoise HUD glyphs and small panels floats above the glasses, with a clear empty centre. This is clearly concept art, not a product photograph or a screenshot. Painterly ink and gouache detail, deep midnight blue, warm brass gold, muted turquoise, soft pools of light, tactile wood and glass. Sophisticated composition, strong focal point, atmospheric depth, readable at small sizes. No brand logos, no lettering, no fake text, no watermark. Not a VR headset, not opaque goggles.",
+  "caption": "AI-generated concept illustration; not a hardware photo or in-game screenshot.",
+  "asset": "hero.webp"
+}
