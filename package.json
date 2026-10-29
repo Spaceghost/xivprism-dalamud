@@ -6,12 +6,14 @@
   "scripts": {
     "build": "tools/build.sh",
     "check": "tools/build.sh --check",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "test:browser": "node tools/browser-check.js"
   },
   "devDependencies": {
-    "imba": "2.0.0-alpha.253",
+    "acorn": "8.15.0",
     "esbuild": "0.28.1",
-    "acorn": "8.15.0"
+    "imba": "2.0.0-alpha.253",
+    "playwright": "^1.56.1"
   },
   "overrides": {
     "imba": {

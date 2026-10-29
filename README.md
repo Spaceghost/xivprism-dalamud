@@ -2,48 +2,68 @@
 
 Your HUD, wherever you look.
 
-A companion HUD project for glasses, extra monitors, phones and tablets. A standalone Prism app and combined presentation in native Moonlight share the same layouts.
+A working Dalamud publisher and standalone browser viewer for the illustrated UI
+family. Pair a viewer to display player and target HP/MP, party readings, module
+readiness, Wayfinder guidance and Piano's public now-playing metadata. The feed
+is read-only; chat bodies, credentials, stream URLs and game controls are excluded.
 
-![XivPrism concept illustration](docs/art/hero.webp)
+This development version targets FFXIV integration and the standalone viewer.
+Native Moonlight composition, platform-specific native apps, display enumeration,
+hotplug and glasses tracking are separate milestones. No hardware support is
+implied by opening the viewer in a browser.
 
-**Status: interactive design preview.** The source builds a browser preview with invented data. There is no installable Dalamud release, live game integration, or verified hardware support yet. The illustration is AI-generated concept artwork, not a screenshot or hardware photograph.
+## Use
 
-[Project site](https://spacegho.st/mods/ffxiv/xivprism/) · [Try the preview](https://spacegho.st/mods/ffxiv/xivprism/preview/) · [Vote on features](https://spacegho.st/mods/ffxiv/xivprism/vote/) · [Roadmap](ROADMAP.md) · [Architecture](docs/architecture.md)
+Install the manual development package, then open `/xivprism`. Enable the viewer
+and open its displayed address in a browser. Enter the six-digit code from the
+game. Codes expire after five minutes and rotate after successful pairing; viewer
+sessions expire after twelve hours. Logout, stopping the publisher, reloading the
+plugin or **Revoke all viewers** invalidates viewer access.
 
-## Build and run the preview
+The default listener is loopback-only on port 41830. For another device, explicitly
+enable private-network access and configure the advertised host address. Use a
+trusted private network or encrypted tunnel: the built-in transport is HTTP.
+Pairing codes and bearer capabilities must be kept private. Unknown host headers
+and cross-origin browser requests are refused. The publisher has no cloud service.
 
-Node 22 or later is required. Authored browser code and build tooling are native Imba, precompiled to committed JavaScript. Third-party compiler dependencies remain unchanged.
+The viewer offers peripheral and desk layouts, full screen, panel arrangement,
+local profiles and versioned import/export. Layouts belong to the receiving
+browser; only layout settings are exported. Camp can recommend a named local
+profile, which the viewer applies when you choose it. Game facts are never stored
+in layout exports. Stale, logged-out and disconnected facts are hidden after two
+seconds; there is no simulated fallback in the live viewer.
+
+`Umbra.XivPrism.dll` adds the optional Umbra toolbar entry. Add its path in Umbra
+Settings → Plugins, restart Umbra and choose the widget in the toolbar editor.
+Left-click toggles settings; right-click opens settings. Existing UI modules and
+Floating Windows keep their own rendering, input and hosting ownership.
+
+## Build
+
+Node 22+, Python 3 and .NET SDK 10.0.401:
 
 ```sh
 npm ci --ignore-scripts
-npm run build
+tools/fetch-dalamud.sh
+python3 tools/plugin-build.py --test --locked
 npm run check
 npm test
-python3 -m http.server 8080 --directory preview
+python3 tools/plugin-package.py
 ```
 
-Open `http://localhost:8080`. The preview connects to no game, Slack account, network peer or glasses. It uses no credentials. Draft/profile exports describe preview state only.
+For installed references, use `--references /path/to/reviewed/dalamud`. Add
+`--umbra-references /path/to/installed/Umbra` to build the optional adapter.
+Reviewed reference hashes are checked. ZIPs include only owned assemblies and
+the manifest; game-provided DLLs are excluded. `build-info.json` records provenance.
 
-## Browser preview capture
+Core tests include actual HTTP listener pairing, unauthorized requests, origin
+checks, expiry, revocation, snapshot bounds, stale-data hiding and logout. Browser
+logic tests check profile validation. Exact live evidence and limitations belong
+in [acceptance](docs/ACCEPTANCE.md). [IPC](docs/IPC.md) describes local integration.
 
-![Actual browser preview with invented data](docs/art/preview.png)
+The earlier `preview/` and its artwork remain a separately labelled design demo
+with invented data. Run `npm run build` to rebuild it; it does not become a live
+connection merely because the new publisher is installed.
 
-Captured in Chromium. This is a design demonstration, not a live game or account connection.
-
-## Planned experience
-
-- **A second HUD, on your side of the connection.** Keep FFXIV on its game screen and place selected information in your glasses or another display. The computer running FFXIV supplies game state; the receiving device handles display detection. When playing natively, the same computer can supply game state to its local companion viewer.
-- **An app when you just want Prism.** The planned standalone Prism Display app receives HUD information without opening Moonlight. Phone, tablet, desktop and glasses outputs can have different layouts. A browser preview below demonstrates the layout choices with invented data.
-- **Native Moonlight, with Prism around the game.** Combined mode is planned for native Moonlight applications. Ordinary overlays will be evaluated where supported; restricted platforms may need a Prism-enabled native Moonlight build. Presentation support must be verified for each receiving device, operating system and connected display.
-- **Peripheral first, pinned afterward.** Start with sparse, readable panels and a clear centre. Whole-surface pinning can use capabilities already supplied by the glasses. Independent spatial panels and physical-monitor alignment are later work, depending on tracking and calibration.
-- **Remember the glasses you actually use.** Associate a display with a profile once. During an active companion session, plugging in those glasses should activate that profile. Unplugging, stale data and viewer failure must close the output and release any optional native HUD relocation.
-- **The HUD family, connected.** Journal, Character, Wayfinder and Piano are planned panel sources. XivMcp will report viewer readiness, actual presentation and recovery state. The display feed will be independent of high-frequency MCP tool calls.
-- **Compatibility is a test record.** Windows clients, Android phone and wearable clients, and iPadOS are targets. Ordinary display output, simultaneous Moonlight use, whole-surface pinning and spatial panels are separate capabilities. No glasses model, native companion app or live game connection has been verified yet.
-
-## Publication and validation
-
-The canonical website registry and ballots are maintained in [ghostty-vote](https://github.com/Spaceghost/ghostty-vote). `metadata/project.json` records this project's identity and honest publication state. `metadata/feature-catalogue.json` mirrors the initial public ballot. [Browser preview downloads](https://github.com/Spaceghost/xivprism-dalamud/releases) contain the standalone design demonstration. There is no installable Dalamud plugin or plugin installer entry yet.
-
-The CI verifies precompiled output, builds the browser preview, and runs the interaction regression tests. Real game, account, display, hotplug and input checks remain acceptance work, tracked in the roadmap.
-
-Made by Johnneylee Jack Rollins. An independent fan project, not affiliated with Square Enix or hardware/service vendors. Source is MIT licensed; generated artwork attribution is in `docs/art/provenance.json`.
+[Project](https://spacegho.st/mods/ffxiv/xivprism/) ·
+[Umbra family](https://spacegho.st/mods/ffxiv/umbra/) · [Roadmap](ROADMAP.md).

@@ -1,6 +1,6 @@
 // Generated from native Imba; edit preview/main.imba.
 (() => {
-  // preview/main.js
+  // preview/preview/main.js
   var project = globalThis.document.body.dataset.project;
   var root = globalThis.document.querySelector("#preview");
   var state = { mode: "standalone", output: "glasses", connected: true, sample: 0, quiet: false, conversation: "dm", preset: "campfire" };

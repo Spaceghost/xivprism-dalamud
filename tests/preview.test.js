@@ -1,6 +1,7 @@
 // Generated from native Imba; edit tests/preview.test.imba.
 
 /*body*/
+import {defaults,validProfiles} from '../viewer/profile.js';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -133,4 +134,14 @@ test('only actual toggle controls expose pressed state',function() {
 	assert.equal(view.find('Advance sample').attrs['aria-pressed'],undefined);
 	assert.equal(view.find('Export preview profile').attrs['aria-pressed'],undefined);
 	return assert.equal(view.find('Prism only').attrs['aria-pressed'],'true');
+});
+
+test('live layout files reject future versions, invalid bounds and prototype keys',function() {
+	const valid = {version: 1,profiles: defaults};
+	assert.equal(validProfiles(valid),true);
+	assert.equal(validProfiles({version: 2,profiles: defaults}),false);
+	const broken = structuredClone(valid);
+	broken.profiles.Peripheral.player.x = 2;
+	assert.equal(validProfiles(broken),false);
+	return assert.equal(validProfiles(JSON.parse('{"version":1,"profiles":{"__proto__":{}}}')),false);
 });
