@@ -14,7 +14,10 @@ Native Moonlight composition and hardware-specific device apps remain separate.
 
 ## Live evidence
 
-Pending installation and a recorded live smoke test for this publication.
+The plugin and Umbra adapter loaded in the running Wine game. A browser paired
+with the game UI code and rendered actual player/party/provider state. Desktop
+and phone-size viewports had no page errors or horizontal overflow. Stale-data
+hiding, revocation and local layout export passed the browser integration suite.
 
 ## Limits
 

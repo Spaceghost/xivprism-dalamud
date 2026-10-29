@@ -5,7 +5,7 @@ r=Path(__file__).resolve().parents[1];out=r/'release';out.mkdir(exist_ok=True)
 name='XivPrism';manifest=json.loads((r/('src/'+name+'.Plugin/'+name+'.json')).read_text());version=manifest['AssemblyVersion'];source=r/('artifacts/bin/'+name+'.Plugin/release')
 files={f.name:f.read_bytes() for f in source.glob('*.dll')}
 assert set(files)=={name+'.dll',name+'.Core.dll'},'Unexpected dependencies: '+str(list(files))
-files[name+'.json']=(json.dumps(manifest,indent=2)+'\n').encode();files['LICENSE']=(r/'LICENSE').read_bytes()
+files[name+'.json']=(json.dumps(manifest,indent=2)+'\n').encode();files['LICENSE']=(r/'LICENSE').read_bytes();files['THIRD-PARTY-NOTICES.md']=(r/'THIRD-PARTY-NOTICES.md').read_bytes()
 epoch=int(subprocess.check_output(['git','log','-1','--format=%ct'],cwd=r,text=True));t=datetime.datetime.fromtimestamp(epoch,datetime.timezone.utc);stamp=(t.year,t.month,t.day,t.hour,t.minute,t.second//2*2)
 artifact=name+'-dev-'+version+'.zip'
 with zipfile.ZipFile(out/artifact,'w',compression=zipfile.ZIP_DEFLATED) as z:
