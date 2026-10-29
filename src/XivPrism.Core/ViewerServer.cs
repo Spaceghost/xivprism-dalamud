@@ -1,65 +1,57 @@
 using System.Net;
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using XivPrism.Core;
+using XivPrism.Core.Http;
 namespace XivPrism.Core;
 
-public sealed class ViewerServer : IDisposable
+/// <summary>Paired read-only transport using the Wine-compatible XivMcp socket framing.</summary>
+public sealed class ViewerServer:IDisposable
 {
-    private readonly HttpListener listener = new();
-    private readonly SemaphoreSlim capacity = new(8);
+    private readonly HttpServer server;
     private readonly FrameStore frames;
     private readonly ViewerSessions sessions;
     private readonly string host;
-    private readonly Dictionary<string, (string Mime, byte[] Data)> assets = [];
-    private volatile bool disposed;
-    public string? Failure { get; private set; }
-    public ViewerServer(int port, bool networkEnabled, string advertisedHost, FrameStore frames, ViewerSessions sessions, IReadOnlyDictionary<string,(string Mime,byte[] Data)> assets)
+    private readonly IReadOnlyDictionary<string,(string Mime,byte[] Data)> assets;
+    public string? Failure{get;private set;}
+    public ViewerServer(int port,bool networkEnabled,string advertisedHost,FrameStore frames,ViewerSessions sessions,IReadOnlyDictionary<string,(string Mime,byte[] Data)> assets)
     {
-        this.frames = frames; this.sessions = sessions; host = advertisedHost;
-        foreach (var item in assets) this.assets.Add(item.Key,item.Value);
-        listener.Prefixes.Add($"http://{(networkEnabled ? "+" : "127.0.0.1")}:{port}/");
-        try { listener.Start(); _ = Accept(); } catch { listener.Close(); throw; }
+        this.frames=frames;this.sessions=sessions;host=advertisedHost;this.assets=assets;
+        server=new(new HttpLimits{MaxConnections=8,MaxHeaderBytes=8192,MaxHeaderCount=40,MaxBodyBytes=512,HeaderTimeout=TimeSpan.FromSeconds(3),BodyTimeout=TimeSpan.FromSeconds(3),WriteTimeout=TimeSpan.FromSeconds(3),KeepAliveIdle=TimeSpan.FromSeconds(5)},Serve,(message,e)=>{if(message=="accept failed")Failure=e?.GetType().Name;});
+        try{server.Start(networkEnabled?IPAddress.Any:IPAddress.Loopback,port);}catch{server.Dispose();throw;}
     }
-    private async Task Accept()
+    private async Task<bool> Serve(HttpConnection connection,HttpRequest request)
     {
-        while (!disposed)
+        Failure=null;
+        var headers=new List<KeyValuePair<string,string>>
         {
-            HttpListenerContext context;
-            try { context = await listener.GetContextAsync().ConfigureAwait(false); }
-            catch (Exception e) { if (!disposed) Failure = e.GetType().Name; return; }
-            if (!capacity.Wait(0)) { context.Response.StatusCode = 503; context.Response.Close(); continue; }
-            _ = Serve(context);
-        }
-    }
-    private async Task Serve(HttpListenerContext c)
-    {
+            new("Cache-Control","no-store"),new("Content-Security-Policy","default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"),new("X-Content-Type-Options","nosniff"),new("Referrer-Policy","no-referrer")
+        };
+        async Task<bool> Reply(int code,string body)=>await Bytes(code,"application/json",Encoding.UTF8.GetBytes(body)).ConfigureAwait(false);
+        async Task<bool> Bytes(int code,string mime,byte[] body){await connection.SendResponseAsync(request,code,headers,mime,body,close:true).ConfigureAwait(false);return false;}
         try
         {
-            var req = c.Request; var response = c.Response; response.Headers["Cache-Control"] = "no-store";
-            response.Headers["Content-Security-Policy"] = "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
-            response.Headers["X-Content-Type-Options"] = "nosniff"; response.Headers["Referrer-Policy"] = "no-referrer";
-            if (req.Url is null || !RequestPolicy.OriginAllowed(req.Url, req.Headers["Origin"], host)) { response.StatusCode = 403; return; }
-            var path = req.Url.AbsolutePath;
-            if (req.HttpMethod == "GET" && assets.TryGetValue(path, out var asset)) { response.ContentType = asset.Mime; await response.OutputStream.WriteAsync(asset.Data).ConfigureAwait(false); return; }
-            response.ContentType = "application/json";
-            if (path == "/api/pair" && req.HttpMethod == "POST")
+            var authority=request.Headers.Get("Host");
+            if(authority is null||!Uri.TryCreate("http://"+authority+request.Path,UriKind.Absolute,out var url)||!RequestPolicy.OriginAllowed(url,request.Headers.Get("Origin"),host))return await Reply(403,"{\"error\":\"origin_refused\"}").ConfigureAwait(false);
+            if(request.Method=="GET"&&assets.TryGetValue(request.Path,out var asset))return await Bytes(200,asset.Mime,asset.Data).ConfigureAwait(false);
+            if(request.Path=="/api/pair"&&request.Method=="POST")
             {
-                if (req.ContentLength64 is < 1 or > 512 || req.ContentType?.StartsWith("application/json", StringComparison.OrdinalIgnoreCase) != true) { response.StatusCode = 400; return; }
-                var buffer = new byte[(int)req.ContentLength64]; using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3)); await req.InputStream.ReadExactlyAsync(buffer, timeout.Token).ConfigureAwait(false);
-                using var doc = JsonDocument.Parse(buffer); var code = doc.RootElement.GetProperty("code").GetString() ?? "";
-                var token = sessions.Pair(code, Environment.TickCount64);
-                response.StatusCode = token is null ? 403 : 200; await Write(response, JsonSerializer.Serialize(new { token, expiresInSeconds = token is null ? 0 : 43200 })).ConfigureAwait(false); return;
+                if(request.Body.Length is <1 or >512||request.Headers.Get("Content-Type")?.StartsWith("application/json",StringComparison.OrdinalIgnoreCase)!=true)return await Reply(400,"{\"error\":\"invalid_pair_request\"}").ConfigureAwait(false);
+                using var doc=JsonDocument.Parse(request.Body,new JsonDocumentOptions{MaxDepth=4});var code=doc.RootElement.GetProperty("code").GetString()??"";var token=sessions.Pair(code,Environment.TickCount64);
+                return await Reply(token is null?403:200,JsonSerializer.Serialize(new{token,expiresInSeconds=token is null?0:43200})).ConfigureAwait(false);
             }
-            var auth = req.Headers["Authorization"];
-            if (auth?.StartsWith("Bearer ", StringComparison.Ordinal) != true || !sessions.Authorized(auth[7..], Environment.TickCount64)) { response.StatusCode = 401; return; }
-            if (path == "/api/state" && req.HttpMethod == "GET") { await Write(response, frames.Read(Environment.TickCount64)).ConfigureAwait(false); return; }
-            response.StatusCode = 404;
+            var auth=request.Headers.Get("Authorization");
+            if(auth?.StartsWith("Bearer ",StringComparison.Ordinal)!=true||!sessions.Authorized(auth[7..],Environment.TickCount64))return await Reply(401,"{\"error\":\"pairing_required\"}").ConfigureAwait(false);
+            if(request.Path=="/api/state"&&request.Method=="GET")return await Reply(200,frames.Read(Environment.TickCount64)).ConfigureAwait(false);
+            return await Reply(404,"{\"error\":\"not_found\"}").ConfigureAwait(false);
         }
-        catch (Exception) { try { c.Response.StatusCode = 400; } catch { } }
-        finally { try { c.Response.Close(); } catch { } capacity.Release(); }
+        catch{return await Reply(400,"{\"error\":\"invalid_request\"}").ConfigureAwait(false);}
     }
-    private static Task Write(HttpListenerResponse response, string body) => response.OutputStream.WriteAsync(Encoding.UTF8.GetBytes(body)).AsTask();
-    public void Dispose() { disposed = true; listener.Close(); }
+    private int disposed;
+    public void Dispose()
+    {
+        if(Interlocked.Exchange(ref disposed,1)!=0)return;
+        server.StopAccepting(); _=Shutdown();
+    }
+    private async Task Shutdown(){try{await server.StopAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false);}finally{server.Dispose();}}
+
 }

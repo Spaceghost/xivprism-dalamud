@@ -24,7 +24,7 @@ The default listener is loopback-only on port 41830. For another device, explici
 enable private-network access and configure the advertised host address. Use a
 trusted private network or encrypted tunnel: the built-in transport is HTTP.
 Pairing codes and bearer capabilities must be kept private. Unknown host headers
-and cross-origin browser requests are refused. The publisher has no cloud service.
+and cross-origin browser requests are refused. The publisher has no cloud service. Its bounded socket framing is adapted from XivMcp, avoiding Windows http.sys and administrator URL reservations.
 
 The viewer offers peripheral and desk layouts, full screen, panel arrangement,
 local profiles and versioned import/export. Layouts belong to the receiving
@@ -56,7 +56,7 @@ For installed references, use `--references /path/to/reviewed/dalamud`. Add
 Reviewed reference hashes are checked. ZIPs include only owned assemblies and
 the manifest; game-provided DLLs are excluded. `build-info.json` records provenance.
 
-Core tests include actual HTTP listener pairing, unauthorized requests, origin
+Core tests include socket HTTP pairing, unauthorized requests, origin
 checks, expiry, revocation, snapshot bounds, stale-data hiding and logout. Browser
 logic tests check profile validation. Exact live evidence and limitations belong
 in [acceptance](docs/ACCEPTANCE.md). [IPC](docs/IPC.md) describes local integration.

@@ -7,7 +7,7 @@ using XivPrism.Core;
 namespace XivPrism.Tests;
 public sealed class TransportTests
 {
-    [Fact]public async Task RealHttpListenerRequiresPairingAndHidesRevokedOrStaleFacts()
+    [Fact]public async Task SocketPublisherRequiresPairingAndHidesRevokedOrStaleFacts()
     {
         var ct=TestContext.Current.CancellationToken;
         var probe=new TcpListener(IPAddress.Loopback,0);probe.Start();var port=((IPEndPoint)probe.LocalEndpoint).Port;probe.Stop();

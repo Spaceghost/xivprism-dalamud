@@ -91,6 +91,12 @@ public sealed class Plugin : IDalamudPlugin
                 case "profile.recommend":scene=r.Scene;profile=r.Profile;break;
             }
         var now=Environment.TickCount64;if(now<nextRead)return;nextRead=now+200;
+        if(server is null)
+        {
+            frames.Publish(new(1,false,null,null,[],[],scene,profile),now);
+            Volatile.Write(ref cachedStatus,JsonSerializer.Serialize(new{ok=true,result=new{version=1,module="prism",state=new{ready=true,publishing=false,loggedIn=client.IsLoggedIn,scene,profile,window=new{open},sourceCount=0}}}));
+            return;
+        }
         try
         {
             Actor? player=client.IsLoggedIn&&!conditions[ConditionFlag.BetweenAreas]&&!conditions[ConditionFlag.BetweenAreas51]&&!conditions[ConditionFlag.WatchingCutscene]&&!conditions[ConditionFlag.WatchingCutscene78]&&objects.LocalPlayer is {} p?Copy(p):null;

@@ -7,7 +7,7 @@ Native Moonlight composition and hardware-specific device apps remain separate.
 
 - Dalamud API 15 builds against reviewed 15.0.3.6 references and installed 15.0.3.9.
 - Umbra toolbar adapter builds against installed Umbra 3.1.18.0.
-- Ten Core tests for this module, including pairing, revocation, freshness and a real HTTP listener.
+- 46 Core tests for this module, including pairing, revocation, freshness and the Wine-compatible socket HTTP server and strict request parser.
 - Existing preview and compiled Imba output remain checked separately.
 - Family layout compatibility is additive within protocol version 1; no game action
   or chat capability is added.
